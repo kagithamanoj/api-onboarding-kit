@@ -11,7 +11,7 @@ servers:
   - url: https://{{ spec.name }}-gateway.example.com
 x-google-allow: all
 x-google-backend:
-  address: https://backend.internal/{{ spec.name }}
+  address: {{ backend }}
   protocol: h2
 paths:
   /v1/*:

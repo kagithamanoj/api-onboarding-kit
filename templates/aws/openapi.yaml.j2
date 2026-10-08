@@ -19,7 +19,7 @@ paths:
       x-amazon-apigateway-integration:
         type: http_proxy
         httpMethod: ANY
-        uri: https://backend.internal/{{ spec.name }}/{proxy}
+        uri: {{ backend }}/{proxy}
         passthroughBehavior: when_no_match
       responses:
         '200':

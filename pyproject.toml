@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "api-onboarding-kit"
-version = "0.3.0"
+version = "1.0.0"
 description = "Self-service API consumer onboarding: declare requirements in YAML, get versioned gateway configs, validated in CI."
 readme = "README.md"
 requires-python = ">=3.10"

@@ -20,11 +20,12 @@ def diff_deployed(
     deployed_dir: str,
     library_path: str,
     format: str = "native",
+    env: str | None = None,
 ) -> dict[str, str]:
     """Return {filename: diff_text} for every file that is missing or differs."""
     spec = load_spec(spec_path)
     library = load_library(library_path)
-    rendered = render(spec, library, gateway, format)
+    rendered = render(spec, library, gateway, format, env)
     diffs: dict[str, str] = {}
     for name, content in rendered.items():
         deployed_path = os.path.join(deployed_dir, name)

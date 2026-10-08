@@ -18,12 +18,15 @@ Two consumers with identical requirements should get byte-identical infrastructu
 - **CI is the gate.** Schema validation, lint rules, and dry-run rendering run everywhere. If it passes locally, it passes in the pipeline.
 
 ```
-consumer.yaml ──> validate ──> render ──> apim / apigee / gcp / aws
-                         │                + terraform (apim, aws, gcp)
-                         ├──> plan        dry-run summary
+consumer.yaml ──> validate ──> render ──> apim / apigee / gcp / aws (+ terraform)
+                         │                + backstage catalog
+                         ├──> plan        dry-run summary (per-env with --env)
                          ├──> cost        monthly estimate per cloud
+                         ├──> simulate    load vs rate limit (token bucket)
                          ├──> diff        drift vs deployed files
-                         └──> certs       expiry tracking, renewal checks
+                         ├──> promote     staging -> prod with pre-flight checks
+                         ├──> history     audit ledger of every action
+                         └──> certs       private CA, expiry tracking, CRLs
 ```
 
 ## Quickstart
@@ -61,6 +64,51 @@ One spec, four clouds, two formats:
 - **AWS API Gateway** (`--gateway aws`): OpenAPI with integration extensions plus a usage plan carrying throttle and quota. `--format terraform` adds the `aws_api_gateway_*` resources.
 
 The Terraform output references the native files (`file(...)` / `filebase64(...)`), so config and infrastructure stay in one pipeline. Every file is stamped with the spec name and policy library version and says "Do not hand-edit: regenerate from the consumer spec."
+
+## Promotion workflow
+
+```bash
+onboard promote specs/payments.yaml --from staging --to prod
+```
+
+Validates the spec, pre-flight renders every gateway for the target
+environment (environment overlays applied), asks for confirmation, and
+records the promotion in the audit ledger. Promotion with failing lint
+findings is refused. See `docs/02-spec-reference.md` for overlays.
+
+## Private CA and certificates
+
+```bash
+onboard ca-init --cn "Example Internal CA" --out certs/
+onboard ca-issue --ca certs/ --domain api.internal.example.com --out out/
+onboard ca-crl --ca certs/
+```
+
+A real private CA for internal mTLS: 4096-bit root, per-service issuance,
+revocation tracking, CRL publishing. The CA key is created with `0600`
+permissions. For dev without a CA, self-signed certs are available in
+`onboarding/certs.py` (never for production).
+
+## Traffic simulation
+
+```bash
+onboard simulate specs/payments.yaml --rps 500 --duration 60
+```
+
+Models the resolved rate-limit policy as a token bucket and replays the
+offered load: allowed requests, rejected 429s, and a verdict. Answers
+"will this rate limit survive the launch?" before production does.
+
+## Audit ledger and Backstage
+
+```bash
+onboard history --spec payments-team
+onboard catalog specs/payments.yaml --out catalog-info.yaml
+```
+
+Every render, promotion, and issuance is appended to
+`.onboarding/ledger.jsonl`. The catalog command registers the consumer in
+Backstage as an API entity.
 
 ## Brownfield: import from OpenAPI
 
@@ -121,22 +169,23 @@ Run `onboard validate` locally or wire it into CI. Same checks, same result.
 
 ```
 api-onboarding-kit/
-  onboarding/      spec, policies, renderer, validator, certs,
-                   importer, cost, drift, cli
+  onboarding/      spec, policies, renderer, validator, certs (private CA),
+                   importer, cost, drift, ledger, simulate, catalog, cli
   templates/       Jinja2 templates per gateway (apim, apigee, gcp, aws)
-                   plus terraform/ and ci/
+                   plus terraform/, ci/, backstage/
   policies/        versioned policy library (library.yaml)
-  examples/        consumer spec, PCI example, OpenAPI sample
-  tests/           pytest suite (44 tests)
+  examples/        consumer spec (with env overlays), PCI example, OpenAPI sample
+  docs/            six-chapter user guide
+  tests/           pytest suite (62 tests)
 ```
 
 ## Roadmap
 
 - Live-state drift detection via cloud APIs (Azure, AWS, GCP read-only)
-- ACME/CA hooks for real certificate issuance
+- ACME integration for public certificate issuance
 - Apigee Terraform output
 - Canary rollouts for policy changes
-- Backstage service-catalog entity generation
+- OpenAPI operation-level import (per-path gateway config)
 
 ## License
 

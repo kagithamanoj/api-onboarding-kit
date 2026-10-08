@@ -2,10 +2,18 @@ apiVersion: onboarding/v1
 consumer:
   name: payments-team
   contact: team-payments@example.com
-  environments: [dev, staging, prod]
+  environments:
+    dev:
+      backend: https://payments.dev.internal
+    staging:
+      backend: https://payments.staging.internal
+    prod:
+      backend: https://payments.prod.internal
+      expectedRps: 200
+      burstRps: 500
 traffic:
-  expectedRps: 200
-  burstRps: 500
+  expectedRps: 50
+  burstRps: 150
 auth:
   method: oauth2
 policies:

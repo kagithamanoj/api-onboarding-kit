@@ -16,7 +16,7 @@ import os
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 from .policies import library_version, resolve
-from .spec import ConsumerSpec
+from .spec import ConsumerSpec, backend_for, for_env
 
 TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "..", "templates")
 
@@ -66,22 +66,32 @@ def render(
     library: dict,
     gateway: str,
     format: str = "native",
+    env: str | None = None,
 ) -> dict[str, str]:
-    """Render all files for one gateway/format. Returns {relative_path: content}."""
+    """Render all files for one gateway/format, optionally for one environment.
+
+    When env is given, the environment overlay is applied first, so the
+    output reflects that stage's backend, traffic, and policies.
+    """
     layouts = _layouts_for(spec)
     key = (gateway, format)
     if key not in layouts:
         want = ", ".join(f"{g}/{f}" for g, f in sorted(layouts))
         raise ValueError(f"unknown target {gateway}/{format}; want one of: {want}")
-    env = _env()
-    policies = resolve(spec.policies, library)
+    effective = for_env(spec, env) if env else spec
+    env_config = dict(effective.environments.get(env, {})) if env else {}
+    jinja_env = _env()
+    policies = resolve(effective.policies, library)
     context = {
-        "spec": spec,
+        "spec": effective,
         "policies": policies,
         "policy_library_version": library_version(library),
+        "env": env or "default",
+        "env_config": env_config,
+        "backend": backend_for(spec, env),
     }
     out: dict[str, str] = {}
     for template_file, out_name in layouts[key]:
-        template = env.get_template(template_file)
+        template = jinja_env.get_template(template_file)
         out[out_name] = template.render(context)
     return out
