@@ -1,0 +1,21 @@
+[
+  "tests/test_certs.py::test_dev_cert_roundtrip",
+  "tests/test_certs.py::test_renewal_due_soon",
+  "tests/test_render.py::test_render_apigee",
+  "tests/test_render.py::test_render_apim_deterministic",
+  "tests/test_render.py::test_render_aws_two_files",
+  "tests/test_render.py::test_render_gcp",
+  "tests/test_render.py::test_unknown_gateway",
+  "tests/test_render.py::test_unknown_policy_raises",
+  "tests/test_spec.py::test_bad_name",
+  "tests/test_spec.py::test_bad_version",
+  "tests/test_spec.py::test_burst_below_expected",
+  "tests/test_spec.py::test_unknown_auth",
+  "tests/test_spec.py::test_unknown_env",
+  "tests/test_spec.py::test_valid_spec",
+  "tests/test_validate.py::test_apikey_in_prod_flagged",
+  "tests/test_validate.py::test_clean_spec_has_no_findings",
+  "tests/test_validate.py::test_example_file_validates",
+  "tests/test_validate.py::test_missing_rate_limit_flagged",
+  "tests/test_validate.py::test_unknown_policy_flagged"
+]
