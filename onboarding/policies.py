@@ -21,17 +21,34 @@ def load_library(path: str) -> dict:
 
 
 def resolve(requested: list[str], library: dict) -> list[dict]:
-    """Resolve policy references like 'rate-limit:standard' to definitions."""
+    """Resolve policy references like 'rate-limit:standard' to definitions.
+
+    Bundles (type: bundle) expand recursively into their member policies.
+    Duplicates collapse: selecting a bundle and one of its members directly
+    still renders each policy once.
+    """
     available = library.get("policies", {})
-    resolved = []
-    for ref in requested:
+    resolved: list[dict] = []
+    seen: set[str] = set()
+
+    def _add(ref: str) -> None:
+        if ref in seen:
+            return
         if ref not in available:
             raise PolicyError(
                 f"unknown policy {ref!r}; available: {sorted(available)}"
             )
+        seen.add(ref)
         definition = dict(available[ref])
         definition["ref"] = ref
-        resolved.append(definition)
+        if definition.get("type") == "bundle":
+            for member in definition.get("members", []):
+                _add(member)
+        else:
+            resolved.append(definition)
+
+    for ref in requested:
+        _add(ref)
     return resolved
 
 

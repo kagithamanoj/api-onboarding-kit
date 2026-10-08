@@ -1,0 +1,15 @@
+apiVersion: onboarding/v1
+consumer:
+  name: card-processing
+  contact: payments-platform@example.com
+  environments: [staging, prod]
+traffic:
+  expectedRps: 150
+  burstRps: 400
+auth:
+  method: mtls
+policies:
+  - compliance:pci-dss
+certificates:
+  domains: [payments.example.com]
+  autoRenew: true

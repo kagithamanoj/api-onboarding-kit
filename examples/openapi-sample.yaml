@@ -1,0 +1,34 @@
+openapi: 3.0.0
+info:
+  title: Inventory Service
+  version: 2.4.0
+  description: Internal inventory lookup API
+servers:
+  - url: https://inventory.internal/v2
+paths:
+  /items:
+    get:
+      summary: List items
+      responses:
+        '200':
+          description: OK
+  /items/{id}:
+    get:
+      summary: Get item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://login.example.com/oauth/token
+          scopes: {}

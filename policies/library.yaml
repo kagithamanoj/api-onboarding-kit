@@ -36,3 +36,16 @@ policies:
     description: Office egress ranges only
     cidrs: ["203.0.113.0/24"]
     owner: security-team
+
+  # Compliance bundles expand into member policies at render time.
+  compliance:pci-dss:
+    type: bundle
+    description: PCI-DSS baseline for payment-adjacent APIs
+    members: [auth:jwt-required, rate-limit:standard, ip-allowlist:office]
+    owner: security-team
+
+  compliance:soc2:
+    type: bundle
+    description: SOC 2 baseline (strong auth plus rate limiting)
+    members: [auth:jwt-required, rate-limit:standard]
+    owner: security-team

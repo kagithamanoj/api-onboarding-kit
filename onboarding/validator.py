@@ -5,7 +5,7 @@ passes in the pipeline. No human in the path where drift used to enter.
 """
 from __future__ import annotations
 
-from .policies import load_library
+from .policies import PolicyError, load_library, resolve
 from .spec import ConsumerSpec, SpecError, parse_spec
 
 
@@ -17,7 +17,12 @@ def _lint(spec: ConsumerSpec, library: dict) -> list[str]:
         if ref not in available:
             findings.append(f"policy {ref!r} is not in the library")
 
-    if not any(p.startswith("rate-limit") for p in spec.policies):
+    try:
+        expanded = [d["ref"] for d in resolve(spec.policies, library)]
+    except PolicyError:
+        expanded = [p for p in spec.policies if p in available]
+
+    if not any(p.startswith("rate-limit") for p in expanded):
         findings.append("no rate-limit policy selected; every consumer needs one")
 
     if spec.auth_method == "apikey" and "prod" in spec.environments:
@@ -35,6 +40,21 @@ def _lint(spec: ConsumerSpec, library: dict) -> list[str]:
         findings.append(
             f"expectedRps={spec.expected_rps} is high; confirm capacity review"
         )
+
+    compliance = [p for p in spec.policies if p.startswith("compliance:")]
+    if compliance:
+        if spec.auth_method == "apikey":
+            findings.append(
+                f"{', '.join(compliance)} selected but auth is apikey; "
+                "compliance packs require oauth2 or mtls"
+            )
+        if "prod" in spec.environments and not any(
+            p.startswith("ip-allowlist") for p in expanded
+        ):
+            findings.append(
+                f"{', '.join(compliance)} with prod should include an "
+                "ip-allowlist policy"
+            )
 
     return findings
 
