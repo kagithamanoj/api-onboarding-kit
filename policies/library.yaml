@@ -1,0 +1,38 @@
+# Versioned policy library. Onboarding selects policies; it never authors them inline.
+# Bump `version` on every change. Owners review changes like code.
+version: "1.0.0"
+
+policies:
+  rate-limit:standard:
+    type: rate-limit
+    description: 1000 calls per 60s per subscription key
+    calls: 1000
+    periodSeconds: 60
+    owner: platform-team
+
+  rate-limit:high-throughput:
+    type: rate-limit
+    description: 10000 calls per 60s per subscription key
+    calls: 10000
+    periodSeconds: 60
+    owner: platform-team
+
+  cors:default:
+    type: cors
+    description: Standard browser CORS for web consumers
+    allowCredentials: false
+    allowedOrigins: ["https://app.example.com"]
+    allowedMethods: ["GET", "POST", "PUT", "DELETE"]
+    owner: platform-team
+
+  auth:jwt-required:
+    type: auth
+    description: Require valid JWT on every request
+    openIdConfigUrl: "https://login.example.com/.well-known/openid-configuration"
+    owner: security-team
+
+  ip-allowlist:office:
+    type: ip-allowlist
+    description: Office egress ranges only
+    cidrs: ["203.0.113.0/24"]
+    owner: security-team
