@@ -1,0 +1,17 @@
+apiVersion: onboarding/v1
+consumer:
+  name: payments-team
+  contact: team-payments@example.com
+  environments: [dev, staging, prod]
+traffic:
+  expectedRps: 200
+  burstRps: 500
+auth:
+  method: oauth2
+policies:
+  - rate-limit:standard
+  - cors:default
+  - auth:jwt-required
+certificates:
+  domains: [api.example.com]
+  autoRenew: true
